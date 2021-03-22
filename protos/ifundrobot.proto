@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+option go_package = "ifundrobot/grpc";
+
+// The greeting service definition.
+service Ifundrobot {
+  // Sends a greeting
+  rpc CreateRobot (RobotRequest) returns (CreateReply) {}
+  rpc RobotStatus (RobotRequest) returns (StatusReply) {}
+  rpc StopRobot (RobotRequest) returns (StatusReply) {}
+  rpc StartRobot (RobotRequest) returns (StatusReply) {}
+  rpc RestartRobot (RobotRequest) returns (StatusReply) {}
+}
+
+// The request message containing the user's name.
+message RobotRequest {
+  string name = 1;
+  string currency = 2;
+}
+
+// The response message containing the greetings
+message CreateReply {
+  int32 code = 1;
+  string message = 2;
+}
+
+// The response state containing the status
+message StatusReply {
+  int32 code = 1;
+  string message = 2;
+  string state = 3;
+}
+
