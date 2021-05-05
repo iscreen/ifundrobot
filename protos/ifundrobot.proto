@@ -10,12 +10,20 @@ service Ifundrobot {
   rpc StopRobot (RobotRequest) returns (StatusReply) {}
   rpc StartRobot (RobotRequest) returns (StatusReply) {}
   rpc RestartRobot (RobotRequest) returns (StatusReply) {}
+  rpc MigrateRobot (RobotMigrateRequest) returns (StatusReply) {}
 }
 
 // The request message containing the user's name.
 message RobotRequest {
   string name = 1;
   string currency = 2;
+}
+
+// The request message containing the user's name.
+message RobotMigrateRequest {
+  string name = 1;
+  string fromCurrency = 2;
+  string toCurrency = 3;
 }
 
 // The response message containing the greetings
@@ -30,4 +38,3 @@ message StatusReply {
   string message = 2;
   string state = 3;
 }
-

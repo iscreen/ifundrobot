@@ -35,15 +35,21 @@ func main() {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	r, err := c.CreateRobot(ctx, &pb.RobotRequest{Name: name, Currency: defaultCurreny})
+
+	r, err := c.MigrateRobot(ctx, &pb.RobotMigrateRequest{Name: name, FromCurrency: "fUST", ToCurrency: defaultCurreny})
 	if err != nil {
 		log.Fatalf("could not create robot: %v", err)
 	}
 	log.Printf("CreateRobot: code: %d, message: %s", r.Code, r.Message)
+	// r, err := c.CreateRobot(ctx, &pb.RobotRequest{Name: name, Currency: defaultCurreny})
+	// if err != nil {
+	// 	log.Fatalf("could not create robot: %v", err)
+	// }
+	// log.Printf("CreateRobot: code: %d, message: %s", r.Code, r.Message)
 
-	s, err := c.RobotStatus(ctx, &pb.RobotRequest{Name: name, Currency: defaultCurreny})
-	if err != nil {
-		log.Fatalf("could not query robot status: %v", err)
-	}
-	log.Printf("CreateRobot: %d", s.Code)
+	// s, err := c.RobotStatus(ctx, &pb.RobotRequest{Name: name, Currency: defaultCurreny})
+	// if err != nil {
+	// 	log.Fatalf("could not query robot status: %v", err)
+	// }
+	// log.Printf("CreateRobot: %d", s.Code)
 }
