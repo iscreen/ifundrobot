@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"errors"
+	"io/ioutil"
 	"log"
 	"net"
 	"regexp"
@@ -99,6 +101,19 @@ func (s *server) RestartRobot(ctx context.Context, in *pb.RobotRequest) (*pb.Sta
 	return &pb.StatusReply{Code: 0, State: "", Message: result}, nil
 }
 
+func (s *server) MigrateRobot(ctx context.Context, in *pb.RobotMigrateRequest) (*pb.StatusReply, error) {
+
+	err := replaceRobotCurrent(in.Name, in.FromCurrency, in.ToCurrency)
+	check(err)
+
+	result, err := robotDoAction(in.Name, in.ToCurrency, "restart")
+	if err != nil {
+		return &pb.StatusReply{Code: 1, State: "", Message: result}, err
+	}
+
+	return &pb.StatusReply{Code: 0, State: "", Message: result}, nil
+}
+
 func main() {
 	lis, err := net.Listen("tcp", port)
 	if err != nil {
@@ -138,7 +153,7 @@ func createSupervisorConfig(username, currency string) bool {
 		return true
 	}
 
-	tmpStr1 := strings.ReplaceAll(configTemplate, "%name%", username)
+	tmpStr1 := strings.ReplaceAll(configTemplate, "%name%", strings.ToLower(username))
 	configContent := strings.ReplaceAll(tmpStr1, "%currency%", currency)
 
 	log.Println(configContent)
@@ -200,11 +215,11 @@ func robotState(username, currency string) string {
 }
 
 func robotFilename(username, currency string) string {
-	return supervisorConfigPath + username + "_" + currency + ".conf"
+	return supervisorConfigPath + strings.ToLower(username) + "_" + currency + ".conf"
 }
 
 func robotServiceName(username, currency string) string {
-	return username + "_" + currency
+	return strings.ToLower(username) + "_" + currency
 }
 
 func contains(slice []string, item string) bool {
@@ -215,4 +230,41 @@ func contains(slice []string, item string) bool {
 
 	_, ok := set[item]
 	return ok
+}
+
+func replaceRobotCurrent(username string, fromCurrency string, toCurrency string) error {
+	configFilename := robotFilename(username, fromCurrency)
+	targetConfigFilename := robotFilename(username, toCurrency)
+
+	// remove current config if target file exist
+	if fileExists(targetConfigFilename) {
+		log.Printf("Target %s is exist\n", targetConfigFilename)
+		if fileExists(configFilename) {
+			err := os.Remove(configFilename)
+			check(err)
+			return err
+		}
+	}
+
+	// create target file if current file not exist
+	if !fileExists(configFilename) {
+		log.Printf("%s is not exist\n", configFilename)
+		if !createSupervisorConfig(username, toCurrency) {
+			return errors.New("create supervisor failed")
+		} else {
+			return nil
+		}
+	}
+
+	read, err := ioutil.ReadFile(configFilename)
+	check(err)
+
+	newContents := strings.Replace(string(read), fromCurrency, toCurrency, -1)
+	err = ioutil.WriteFile(configFilename, []byte(newContents), 0)
+	check(err)
+
+	err = os.Rename(configFilename, targetConfigFilename)
+	check(err)
+
+	return err
 }
